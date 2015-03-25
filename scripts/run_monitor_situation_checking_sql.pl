@@ -34,8 +34,9 @@ my ($db,$dummy) = split(':',$db_name);
 
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time); 
 $year += 1900; 
+$mon = $mon + 1;
 
-my $out = "./probable_errors_".$db_name."_".$year."_".$mon."_".$mday.".txt"; 
+my $out = "./monitor_situations_".$db_name."_".$year."_".$mon."_".$mday.".txt"; 
 open (OUT,">$out") || die "Did not create $out"; 
 
 
@@ -66,14 +67,14 @@ order by cnt ) subq"
 ,
 "select 'CDS_length_inconsistent_with_protein_length_count' query_name, current_date(),  database() as db, sum(cnt) 
 from ( 
-select substring_index(f.id,".",2), count(*) cnt 
+select substring_index(f.id,'.',2), count(*) cnt 
 from Feature f 
 inner join IsProteinFor i on f.id = i.to_link 
 inner join ProteinSequence p on p.id = i.from_link 
 where f.feature_type = 'CDS' 
 and f.sequence_length/3 != (length(p.sequence) + 1) 
 and f.sequence_length/3 != length(p.sequence) 
-group by substring_index(f.id,".",2)) subq"
+group by substring_index(f.id,'.',2)) subq"
 ,
 "select 'CDS_Features_not_modulo3_count' query_name, current_date(), database() as db, count(*) 
 from (select f.id, f.sequence_length from Feature f inner join IsOwnerOf i on f.id = i.to_link 

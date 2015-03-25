@@ -33,6 +33,7 @@ my ($db,$dummy) = split(':',$db_name);
 
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time); 
 $year += 1900; 
+$mon = $mon + 1;
 
 my $out = "./probable_errors_".$db_name."_".$year."_".$mon."_".$mday.".txt"; 
 open (OUT,">$out") || die "Did not create $out"; 
@@ -55,10 +56,10 @@ order by count(*) desc) subq"
 "select 'Protein_sequences_that_look_like_DNA_count' query_name, current_date(), database() as db, 'Protein sequences that are DNA only',count(*)
 from (select p.id, p.sequence from ProteinSequence p where p.sequence RLIKE '^[AGTC]+\$') subq"
 ,
-"select 'CDS_length_definitely_wrong_with_protein_length_count' query_name, current_date(),  database() as db,\
+"select 'CDS_length_definitely_wrong_with_protein_length_count' query_name, current_date(),  database() as db,
 'Query is geared to allow for stop codon being included or not. This would allow for up to 3 frameshifts (in same direction - deletion or insertion), which would be extremely unlikely   ', sum(cnt)
 from ( 
-select substring_index(f.id,".",2), count(*) cnt
+select substring_index(f.id,'.',2), count(*) cnt
 from Feature f
 inner join IsProteinFor i on f.id = i.to_link
 inner join ProteinSequence p on p.id = i.from_link 
@@ -66,7 +67,7 @@ where f.feature_type = 'CDS'
 and FLOOR(f.sequence_length/3) != (length(p.sequence) + 1)
 and CEIL(f.sequence_length/3) != (length(p.sequence) + 1) 
 and FLOOR(f.sequence_length/3) != length(p.sequence) 
-group by substring_index(f.id,".",2)) subq"
+group by substring_index(f.id,'.',2)) subq"
 ,
 "select 'Genomes_with_5percent_or_more_obviously_inconistent_proteins' query_name, current_date(), database() as db, 
 'Genomes with 5% of CDS features having this case.  Red flag. Query is geared to allow for stop codon being included or not. This would allow for up to 3 frameshifts (in same direction - deletion or insertion), which would be extremely unlikely', 
@@ -74,7 +75,7 @@ count(*)
 from ( 
 select g.id, g.scientific_name, subq1.cnt, subq2.cds_cnt, (subq1.cnt/subq2.cds_cnt) 
 from Genome g inner join
-(select substring_index(f.id,".",2) as genome_id, count(*) cnt
+(select substring_index(f.id,'.',2) as genome_id, count(*) cnt
 from Feature f 
 inner join IsProteinFor i on f.id = i.to_link
 inner join ProteinSequence p on p.id = i.from_link
@@ -82,10 +83,10 @@ where f.feature_type = 'CDS'
 and FLOOR(f.sequence_length/3) != (length(p.sequence) + 1) 
 and CEIL(f.sequence_length/3) != (length(p.sequence) + 1) 
 and FLOOR(f.sequence_length/3) != length(p.sequence) 
-group by substring_index(f.id,".",2)) subq1 
+group by substring_index(f.id,'.',2)) subq1 
 on subq1.genome_id =g.id 
-inner join (select substring_index(f1.id,".",2) as genome_id, count(*) as cds_cnt from Feature f1 
-where f1.feature_type = 'CDS' group by substring_index(f1.id,".",2)) subq2 
+inner join (select substring_index(f1.id,'.',2) as genome_id, count(*) as cds_cnt from Feature f1 
+where f1.feature_type = 'CDS' group by substring_index(f1.id,'.',2)) subq2 
 on g.id = subq2.genome_id 
 where (subq1.cnt/subq2.cds_cnt) > .05) fullsub"
 ,

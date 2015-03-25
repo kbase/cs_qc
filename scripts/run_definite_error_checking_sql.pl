@@ -30,6 +30,7 @@ my ($db,$dummy) = split(':',$db_name);
 
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time); 
 $year += 1900; 
+$mon = $mon + 1;
 
 my $out = "./definite_errors_".$db_name."_".$year."_".$mon."_".$mday.".txt"; 
 open (OUT,">$out") || die "Did not create $out"; 
