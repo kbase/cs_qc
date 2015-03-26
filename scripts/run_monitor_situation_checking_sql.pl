@@ -41,6 +41,21 @@ open (OUT,">$out") || die "Did not create $out";
 
 
 my @sql_queries = (
+"select 'CDS_length_too_small_count' query_name, current_date(), database() as db, count(*) 
+from (select f.id, f.sequence_length from Feature f where sequence_length < 10 and feature_type = 'CDS') subq"
+,
+"select 'CDS_length_too_large_count' query_name, current_date(), database() as db, count(*)
+from (select f.id, f.sequence_length from Feature f where feature_type = 'CDS' and sequence_length > 100000) subq"
+, 
+"select 'Genomes_with_a_CDS_length_too_large_count' query_name, current_date(), database() as db, count(*)
+from ( 
+select g.id, g.scientific_name, g.domain, g.prokaryotic, s.id as source, count(*) as cnt
+from Feature f inner join IsOwnerOf i on f.id = i.to_link inner join Genome g on g.id = i.from_link
+inner join Submitted su on g.id = su.to_link inner join Source s on s.id = su.from_link 
+where feature_type = 'CDS' and sequence_length > 100000 group by g.id, g.scientific_name, g.domain, g.prokaryotic, s.id
+having cnt > 0 
+order by count(*) desc) subq"
+, 
 "select 'Genomes_with_non_methionine_starting_methione_ending_proteins_count' query_name, current_date(), database() as db, count(*)
 from ( 
 select g.id, g.scientific_name, count(*) as cnt 
